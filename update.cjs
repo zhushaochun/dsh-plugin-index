@@ -19,14 +19,22 @@ function step(label, script) {
   if (res.status !== 0) throw new Error(`${script} exited with ${String(res.status)}`)
 }
 function npm(args) {
-  const res = spawnSync('npm.cmd', args, { stdio: 'inherit', cwd: DIR, shell: true })
+  const res = spawnSync(npmBin(), args, { stdio: 'inherit', cwd: DIR, shell: process.platform === 'win32' })
   if (res.status !== 0) throw new Error(`npm ${args.join(' ')} exited with ${String(res.status)}`)
 }
 
-npm(['pack', 'dsh-plugin-catalog@latest', '--silent'])
+// CI runners have npm on PATH as `npm`; Windows needs the .cmd shim.
+function npmBin() {
+  return process.platform === 'win32' ? 'npm.cmd' : 'npm'
+}
 
 // `npm pack` names the file <name>-<version>.tgz, so find it instead of guessing.
-const TARBALL = fs.readdirSync(DIR).filter((f) => /^dsh-plugin-catalog-.*\.tgz$/.test(f)).sort().pop()
+// Any leftover tarball from an interrupted earlier run would otherwise match too,
+// so remove stale ones BEFORE packing.
+const allTarballs = () => fs.readdirSync(DIR).filter((f) => /^dsh-plugin-catalog-.*\.tgz$/.test(f))
+for (const f of allTarballs()) fs.rmSync(path.join(DIR, f))
+npm(['pack', 'dsh-plugin-catalog@latest', '--silent'])
+const TARBALL = allTarballs().sort().pop()
 if (!TARBALL) throw new Error('no catalog tarball was produced by npm pack')
 
 // Windows `tar.exe` (a System32 shim) cannot open a file relative to a non-ASCII
@@ -36,8 +44,16 @@ if (!TARBALL) throw new Error('no catalog tarball was produced by npm pack')
 process.stdout.write('>> unpack catalogue\n')
 const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'dshcat-refresh-'))
 fs.copyFileSync(path.join(DIR, TARBALL), path.join(stage, 'catalog.tgz'))
+// tar is GNU tar on every platform we ship on; Windows' System32 shim needs an
+// ASCII cwd, which is why we already extracted in a temp dir.
 const untar = spawnSync('tar', ['-xzf', 'catalog.tgz'], { stdio: 'inherit', cwd: stage, shell: false })
 if (untar.status !== 0) throw new Error('tar exited with ' + String(untar.status))
+
+// tar exits 0 even when it wrote nothing (e.g. it only created package/ but no
+// plugins.json), which would silently pass an empty catalog down the pipeline.
+if (!fs.existsSync(path.join(stage, 'package', 'plugins.json'))) {
+  throw new Error('unpack produced no package/plugins.json — tarball layout changed?')
+}
 
 process.env.CATALOG_SRC = path.join(stage, 'package', 'plugins.json')
 process.env.CATALOG = path.join(DIR, 'catalog', 'plugins.json')
