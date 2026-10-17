@@ -5,8 +5,8 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const DIR = __dirname
-const CATALOG = process.argv[2] || path.join(DIR, 'catalog', 'plugins.json')
-const OUT = path.join(DIR, 'index.json')
+const CATALOG = process.argv[2] || process.env.CATALOG || path.join(DIR, 'catalog', 'plugins.json')
+const OUT = process.argv[3] || process.env.INDEX || path.join(DIR, 'index.json')
 
 // Mirror of dsh-plugin-market-index/lib/index.js:120 PACKAGE_NAME.
 const NAME_RE = /^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/

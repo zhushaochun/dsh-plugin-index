@@ -5,8 +5,8 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const DIR = __dirname
-const CATALOG = process.argv[2] || path.join(DIR, 'catalog', 'plugins.json')
-const INDEX = process.argv[3] || path.join(DIR, 'index.json')
+const CATALOG = process.argv[2] || process.env.CATALOG || path.join(DIR, 'catalog', 'plugins.json')
+const INDEX = process.argv[3] || process.env.INDEX || path.join(DIR, 'index.json')
 
 // Source files are UTF-8 Chinese text read/written through PowerShell 5.1's
 // default GBK pipes, so normalize mojibake instead of trusting the decoded

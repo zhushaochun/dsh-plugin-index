@@ -6,9 +6,9 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const DIR = __dirname
-const INDEX = process.argv[2] || path.join(DIR, 'index.json')
+const INDEX = process.argv[2] || process.env.INDEX || path.join(DIR, 'index.json')
 const OUT = process.argv[3] || INDEX
-const CACHE = process.argv[4] || path.join(DIR, 'times-cache.json')
+const CACHE = process.argv[4] || process.env.TIMES_CACHE || path.join(DIR, 'times-cache.json')
 const CONCURRENCY = Number(process.env.CONCURRENCY || 12)
 const RETRIES = 4
 
