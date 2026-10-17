@@ -23,18 +23,23 @@ jobs:
 
       - name: refresh
         run: |
-          node update.cjs 2>&1 | tee build.log
-          # The Actions log API is unreadable without a token, so surface the
-          # failure in an annotation, which IS readable.
-          if [ "${PIPESTATUS[0]}" != "0" ]; then
-            echo "::error title=update.cjs failed::$(tail -40 build.log)"
-            exit "${PIPESTATUS[0]}"
+          set +e
+          node update.cjs > build.log 2>&1
+          code=$?
+          set -e
+          if [ "$code" != "0" ]; then
+            # Multi-line annotation messages are collapsed to their first line,
+            # so write the tail out as a single %0A-joined line.
+            tail -60 build.log | sed 's/\r//' | awk 'BEGIN{ORS=""} {if(NR>1) printf "%%0A"; printf "%s", $0}' > fail.txt
+            echo "::error title=update.cjs failed::$(cat fail.txt)"
+            exit "$code"
           fi
 
       - name: publish
         run: |
           git config user.name "dsh-plugin-index-bot"
           git config user.email "dsh-plugin-index-bot@users.noreply.github.com"
+          rm -f build.log fail.txt
           git add index.json times-cache.json
           # Pin the whole repo (not index.json alone) so a stale node_modules or
           # untracked artifact from a previous run can never get committed.
