@@ -1,12 +1,12 @@
-// Daily rebuild of the DSH plugin-market index from the upstream catalog.
-// The catalog package `dsh-plugin-catalog` publishes every day around 04:00
-// Beijing time (checked 2026-10-17: 2026.1004 → 2026.1017, ~03:55Z each day),
-// so this runs once per day and pushes the rebuilt index.json to Pages.
+# Daily rebuild of the DSH plugin-market index from the upstream catalog.
+# The catalog package `dsh-plugin-catalog` publishes every day around 04:00
+# Beijing time (checked 2026-10-17: 2026.1004 -> 2026.1017, ~03:55Z each day),
+# so this runs once per day and pushes the rebuilt index.json to Pages.
 name: refresh index
 
 on:
   schedule:
-    - cron: '0 5 * * *'   # 05:00 UTC ≈ 13:00 Asia/Shanghai, after the catalog release
+    - cron: '0 5 * * *'   # 05:00 UTC = 13:00 Asia/Shanghai, after the catalog release
   workflow_dispatch:
 
 permissions:
