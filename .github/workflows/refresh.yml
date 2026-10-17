@@ -24,6 +24,7 @@ jobs:
       - name: refresh
         run: |
           set +e
+          npm install --no-audit --no-fund
           node update.cjs > build.log 2>&1
           code=$?
           set -e
