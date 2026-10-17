@@ -22,7 +22,14 @@ jobs:
           node-version: '22'
 
       - name: refresh
-        run: node update.cjs
+        run: |
+          node update.cjs 2>&1 | tee build.log
+          # The Actions log API is unreadable without a token, so surface the
+          # failure in an annotation, which IS readable.
+          if [ "${PIPESTATUS[0]}" != "0" ]; then
+            echo "::error title=update.cjs failed::$(tail -40 build.log)"
+            exit "${PIPESTATUS[0]}"
+          fi
 
       - name: publish
         run: |
